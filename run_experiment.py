@@ -18,7 +18,7 @@ from palobst.palobst import PaloBst
 from KiGB.core.scikit.skigb import SKiGB as KiGB
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings('ignore', category=FutureWarning)
 # %% md
 
 # Define sklearn models
@@ -65,11 +65,11 @@ space = {
     'trees': hp.randint('trees', 20, 200),
     'learning_rate': hp.uniform('learning_rate', 0.1, 0.8),
     'lamda': hp.randint('lamda', 1, 8),
-    'objective': "binary",
+    'loss': 'deviance',
 }
-model2 = (KiGB, space, preprocess_base, False)
+model2 = (KiGB, space, preprocess_base, True)
 
-# models = [baseline_model, model1, model2]
+# models = [baseline_model, model1]
 models = [model2]
 
 # %% md
@@ -89,7 +89,7 @@ def optimize_parameters(model, space, X_train, y_train, multiclass=True):
         if isinstance(model(), KiGB):
             data = pd.DataFrame(np.append(X_train, y_train.reshape(-1,1), axis=1))
             class_corr_coef = list(data.corr().iloc[-1])
-            params['advice'] = np.array(class_corr_coef)
+            params['advice'] = np.array(class_corr_coef[:-1])
         if multiclass:
             gbm_clf = model(**params)
         else:
@@ -163,10 +163,16 @@ def calculate_scores(y_test, y_pred, y_proba):
 
 
 def train_classifier(model, best_params, X_train, y_train, multiclass):
+    if isinstance(model(), KiGB):
+        data = pd.DataFrame(np.append(X_train, y_train.reshape(-1, 1), axis=1))
+        class_corr_coef = list(data.corr().iloc[-1])
+        best_params['advice'] = np.array(class_corr_coef[:-1])
+
     if multiclass:
         clf = model(**best_params)
     else:
         clf = OneVsRestClassifier(model(**best_params), n_jobs=2)
+
     tarin_start_time = timeit.default_timer()
     print(best_params)
     clf.fit(X_train, y_train)

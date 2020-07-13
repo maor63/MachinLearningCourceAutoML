@@ -1,5 +1,6 @@
 import warnings
 
+from numba import njit
 from scipy.special import expit
 from sklearn.base import RegressorMixin
 
@@ -39,6 +40,7 @@ class SKiGB(GradientBoostingRegressor, RegressorMixin):
         self.init = init
         self.kigb = None
 
+
     def fit(self, X, y, sample_weight=None, monitor=None):
         logging.debug("Starting KiGB fit")
         utils.advice = self.advice
@@ -62,7 +64,7 @@ class SKiGB(GradientBoostingRegressor, RegressorMixin):
                                             random_state=self.random_state, init=self.init)
         clf.fit(X, y, monitor=utils.kigb_penalty_update)
         self.kigb = clf
-        if utils.trees_modified ==0:
+        if utils.trees_modified == 0:
             logging.info("No Trees Updated")
         logging.debug("Trees Modified: " + str(utils.trees_modified))
         logging.debug("Nodes Violation: " + str(utils.node_violations))
