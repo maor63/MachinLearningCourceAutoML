@@ -17,6 +17,8 @@ import lightgbm as lgb
 from palobst.palobst import PaloBst
 from KiGB.core.scikit.skigb import SKiGB as KiGB
 import warnings
+from NNDT.NNDT_classifier import NNDT
+import gbdtpl
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 # %% md
@@ -61,13 +63,12 @@ space = {
 model1 = (PaloBst, space, preprocess_base, False)
 
 space = {
-    'epsilon': hp.uniform('epsilon', 0, 0.6),
-    'trees': hp.randint('trees', 20, 200),
-    'learning_rate': hp.uniform('learning_rate', 0.1, 0.8),
-    'lamda': hp.randint('lamda', 1, 8),
-    'loss': 'deviance',
+    'lr': hp.uniform('lr', 0.0001, 0.05),
+    'cut_count': hp.randint('cut_count', 4, 10),
+    # 'temprature': hp.uniform('temprature', 0.01, 0.8),
+    'epochs': hp.randint('epochs', 5, 50),
 }
-model2 = (KiGB, space, preprocess_base, True)
+model2 = (NNDT, space, preprocess_base, True)
 
 # models = [baseline_model, model1]
 models = [model2]
@@ -113,7 +114,7 @@ def optimize_parameters(model, space, X_train, y_train, multiclass=True):
 def load_dataset(path):
     df = pd.read_csv(path)
     X = df.iloc[:, :-1].values
-    y = LabelEncoder().fit_transform(df.iloc[:, -1].astype('str').values)
+    y = LabelEncoder().fit_transform(df.iloc[:, -1].values)
     y = y.ravel()
     return X, y
 
