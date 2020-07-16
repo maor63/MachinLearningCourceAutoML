@@ -138,7 +138,7 @@ class DecisionTreeClassifier:
 ############################################################
 ############################################################
 
-class RandomForestClassifier(BaseEstimator):
+class ProbabilisticRandomForest(BaseEstimator):
     def __init__(self, n_estimators_=10, criterion='gini', max_features='auto', use_py_gini=True, use_py_leafs=True,
                  max_depth=None, keep_proba=0.05, bootstrap=True, new_syn_data_frac=0, min_py_sum_leaf=1):
         self.n_estimators_ = n_estimators_

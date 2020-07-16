@@ -1,1 +1,1 @@
-from .PRF import RandomForestClassifier as prf
+from .PRF import ProbabilisticRandomForest as prf
