@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from sklearn.base import BaseEstimator
 
-class NNDT(BaseEstimator):
+class DNDT(BaseEstimator):
     def __init__(self, cut_count=4, lr=0.01, temprature=0.1, epochs=10):
         self.cut_count = cut_count
         self.lr = lr

@@ -17,7 +17,8 @@ import lightgbm as lgb
 from palobst.palobst import PaloBst
 from KiGB.core.scikit.skigb import SKiGB as KiGB
 import warnings
-from NNDT.NNDT_classifier import NNDT
+from NNDT.NNDT_classifier import DNDT
+from PRF import prf as ProbabilisticRandomForest
 import gbdtpl
 
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -65,13 +66,20 @@ model1 = (PaloBst, space, preprocess_base, False)
 space = {
     'lr': hp.uniform('lr', 0.0001, 0.05),
     'cut_count': hp.randint('cut_count', 4, 10),
-    # 'temprature': hp.uniform('temprature', 0.01, 0.8),
+    'temprature': hp.uniform('temprature', 0.01, 0.8),
     'epochs': hp.randint('epochs', 5, 50),
 }
-model2 = (NNDT, space, preprocess_base, True)
+model2 = (DNDT, space, preprocess_base, True)
+
+space = {
+    'keep_proba': hp.uniform('keep_proba', 0.001, 0.1),
+    'n_estimators_': hp.randint('n_estimators_', 10, 80),
+    'max_depth': hp.randint('max_depth', 3, 8),
+}
+model3 = (ProbabilisticRandomForest, space, preprocess_base, True)
 
 # models = [baseline_model, model1]
-models = [model2]
+models = [model3]
 
 # %% md
 
