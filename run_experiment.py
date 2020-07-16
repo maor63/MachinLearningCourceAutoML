@@ -78,8 +78,8 @@ space = {
 }
 model3 = (ProbabilisticRandomForest, space, preprocess_base, True)
 
-# models = [baseline_model, model1]
-models = [model3]
+models = [baseline_model, model1, model2, model3]
+# models = [model2]
 
 # %% md
 
@@ -203,12 +203,14 @@ import warnings
 
 warnings.filterwarnings("ignore")
 columns = ['Dataset Name', 'Algorithm Name', 'Cross Validation [1-10]', 'Hyper-Parameters Values',
-           'Accuracy', 'TPR', 'FPR', 'Precision', 'AUC', 'PR-Curve',
-           'Training Time', 'Inference Time']
+           'Accuracy', 'TPR_macro', 'FPR_macro', 'Precision_macro', 'AUC_macro', 'PR-Curve_macro',
+           'Training Time (sec)', 'Inference Time (sec)']
 results = []
 false_datasets = []
 total_datasets = len(os.listdir(dataset_path))
 for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
+    if i > 1:
+        break
     X, y = load_dataset(dataset_path / dataset_csv)
     dataset_name = dataset_csv.split('.csv')[0]
     model_count = len(models)
@@ -237,24 +239,3 @@ for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
 results_df = pd.DataFrame(results, columns=columns)
 results_df.to_csv(folder_path / 'results.csv', index=False)
 
-clf = PaloBst(distribution="bernoulli")
-X, y = load_dataset(dataset_path / dataset_csv)
-clf.fit(X, y)
-clf.predict(y)
-
-# Set up space dictionary with specified hyperparameters
-space = {'max_depth': hp.quniform('max_depth', 2, 10, 2), 'learning_rate': hp.uniform('learning_rate', 0.001, 0.9)}
-
-
-# Set up objective function
-def objective(params):
-    params = {'max_depth': int(params['max_depth']), 'learning_rate': params['learning_rate']}
-    gbm_clf = GradientBoostingClassifier(n_estimators=100, **params)
-    best_score = cross_val_score(gbm_clf, X_train, y_train, scoring='accuracy', cv=2, n_jobs=4).mean()
-    loss = 1 - best_score
-    return loss
-
-
-# Run the algorithm
-best = fmin(fn=objective, space=space, max_evals=20, rstate=np.random.RandomState(42), algo=tpe.suggest)
-print(best)

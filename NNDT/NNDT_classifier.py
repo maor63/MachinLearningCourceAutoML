@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from sklearn.base import BaseEstimator
 
+
 class DNDT(BaseEstimator):
     def __init__(self, cut_count=4, lr=0.01, temprature=0.1, epochs=10):
         self.cut_count = cut_count
@@ -55,6 +56,8 @@ class DNDT(BaseEstimator):
         W = torch.reshape(torch.linspace(1.0, D + 1.0, D + 1), [1, -1])
         cut_points, _ = torch.sort(cut_points)  # make sure cut_points is monotonically increasing
         b = torch.cumsum(torch.cat([torch.zeros([1]), -cut_points], 0), 0)
+        if x.shape[1] == 0:
+            x = torch.cat((x, torch.zeros((x.shape[0]), 1)), dim=1)
         h = torch.matmul(x, W) + b
         res = torch.exp(h - torch.max(h))
         res = res / torch.sum(res, dim=-1, keepdim=True)
