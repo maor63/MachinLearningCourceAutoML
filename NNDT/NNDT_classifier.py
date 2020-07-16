@@ -5,8 +5,9 @@ from sklearn.base import BaseEstimator
 
 
 class DNDT(BaseEstimator):
-    def __init__(self, cut_count=4, lr=0.01, temprature=0.1, epochs=10):
+    def __init__(self, cut_count=4, cut_size=1, lr=0.01, temprature=0.1, epochs=10):
         self.cut_count = cut_count
+        self.cut_size = cut_size
         self.lr = lr
         self.temprature = temprature
         self.epochs = epochs
@@ -16,7 +17,7 @@ class DNDT(BaseEstimator):
         y_input = torch.from_numpy(y)
         num_class = len(np.unique(y_input))
 
-        num_cut = [1] * self.cut_count
+        num_cut = [self.cut_size] * self.cut_count
 
         num_leaf = np.prod(np.array(num_cut) + 1)
         self.cut_points_list = [torch.rand([i], requires_grad=True) for i in num_cut]
@@ -27,9 +28,10 @@ class DNDT(BaseEstimator):
         for i in range(self.epochs):
             self.optimizer.zero_grad()
             y_pred = self.nn_decision_tree(X_input, self.cut_points_list, self.leaf_score, temperature=self.temprature)
-            loss = self.loss_function(y_pred, y_input)
+            loss = self.loss_function(y_pred, y_input.long())
             loss.backward()
             self.optimizer.step()
+            #
             # if i % 1 == 0:
             #     print(loss.detach().numpy())
         # print('error rate %.2f' % (1 - np.mean(np.argmax(y_pred.detach().numpy(), axis=1) == np.argmax(y, axis=1))))

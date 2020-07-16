@@ -65,9 +65,10 @@ model1 = (PaloBst, space, preprocess_base, False)
 
 space = {
     'lr': hp.uniform('lr', 0.0001, 0.05),
-    'cut_count': hp.randint('cut_count', 4, 10),
+    'cut_count': hp.randint('cut_count', 4, 8),
+    'cut_size': hp.randint('cut_size', 1, 2),
     'temprature': hp.uniform('temprature', 0.01, 0.8),
-    'epochs': hp.randint('epochs', 5, 50),
+    'epochs': hp.randint('epochs', 5, 70),
 }
 model2 = (DNDT, space, preprocess_base, True)
 
