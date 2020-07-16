@@ -180,7 +180,7 @@ def train_classifier(model, best_params, X_train, y_train, multiclass):
     if multiclass:
         clf = model(**best_params)
     else:
-        clf = OneVsRestClassifier(model(**best_params), n_jobs=2)
+        clf = OneVsRestClassifier(model(**best_params), n_jobs=5)
 
     tarin_start_time = timeit.default_timer()
     print(best_params)
@@ -209,8 +209,6 @@ results = []
 false_datasets = []
 total_datasets = len(os.listdir(dataset_path))
 for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
-    if i > 1:
-        break
     X, y = load_dataset(dataset_path / dataset_csv)
     dataset_name = dataset_csv.split('.csv')[0]
     model_count = len(models)
