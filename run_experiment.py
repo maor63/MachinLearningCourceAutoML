@@ -2,6 +2,7 @@
 
 import pandas as pd
 import numpy as np
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import *
 from sklearn.ensemble import *
 from sklearn.multiclass import OneVsRestClassifier
@@ -41,6 +42,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 
 def preprocess_base(X, y):
     X = pd.get_dummies(pd.DataFrame(X)).values
+    X = SimpleImputer(strategy='mean').fit_transform(X)
     return X, y
 
 
@@ -96,10 +98,8 @@ print('number of datasets:', len(os.listdir(dataset_path)))
 def optimize_parameters(model, space, X_train, y_train, multiclass=True):
     def objective(params):
         params = {param: params[param] for param in space}
-        if isinstance(model(), KiGB):
-            data = pd.DataFrame(np.append(X_train, y_train.reshape(-1,1), axis=1))
-            class_corr_coef = list(data.corr().iloc[-1])
-            params['advice'] = np.array(class_corr_coef[:-1])
+        if isinstance(model(), DNDT):
+            params['num_class'] = len(np.unique(y))
         if multiclass:
             gbm_clf = model(**params)
         else:
@@ -128,7 +128,7 @@ def load_dataset(path):
     return X, y
 
 
-def PR_curve_auc_macro(y_true, y_prob):
+def PR_curve_auc_macro(y_test, y_prob):
     precision = dict()
     recall = dict()
     for i in range(y_prob.shape[1]):
@@ -139,7 +139,7 @@ def PR_curve_auc_macro(y_true, y_prob):
     return np.mean(aucs)
 
 
-def roc_auc_macro(y_true, y_prob):
+def roc_auc_macro(y_test, y_prob):
     tprs = dict()
     fprs = dict()
     for i in range(y_prob.shape[1]):
@@ -150,14 +150,21 @@ def roc_auc_macro(y_true, y_prob):
     return np.mean(aucs)
 
 
-def fpr_macro(y_true, y_pred, y_prob):
+def fpr_macro(y_test, y_pred, y_prob):
     fprs = dict()
     for i in range(y_prob.shape[1]):
         y_true = np.zeros(y_test.size)
         y_predict = np.zeros(y_test.size)
         y_true[y_test == i] = 1
         y_predict[y_pred == i] = 1
-        tn, fp, fn, tp = metrics.confusion_matrix(y_true, y_predict).ravel()
+        con_mat_scores = metrics.confusion_matrix(y_true, y_predict).ravel()
+        if len(con_mat_scores) == 1:
+            if y_true[0] == 0:
+                tn, fp, fn, tp = con_mat_scores[0], 0, 0, 0
+            else:
+                tn, fp, fn, tp = 0, 0, 0, con_mat_scores[0]
+        else:
+            tn, fp, fn, tp = con_mat_scores
         fprs[i] = fp / (fp + tn)
     return np.mean(list(fprs.values()))
 
@@ -173,11 +180,8 @@ def calculate_scores(y_test, y_pred, y_proba):
 
 
 def train_classifier(model, best_params, X_train, y_train, multiclass):
-    if isinstance(model(), KiGB):
-        data = pd.DataFrame(np.append(X_train, y_train.reshape(-1, 1), axis=1))
-        class_corr_coef = list(data.corr().iloc[-1])
-        best_params['advice'] = np.array(class_corr_coef[:-1])
-
+    if isinstance(model(), DNDT):
+        best_params['num_class'] = len(np.unique(y))
     if multiclass:
         clf = model(**best_params)
     else:
@@ -209,7 +213,11 @@ columns = ['Dataset Name', 'Algorithm Name', 'Cross Validation [1-10]', 'Hyper-P
 results = []
 false_datasets = []
 total_datasets = len(os.listdir(dataset_path))
+start_dataset = 7
+
 for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
+    if i < start_dataset:
+        continue
     X, y = load_dataset(dataset_path / dataset_csv)
     dataset_name = dataset_csv.split('.csv')[0]
     model_count = len(models)
@@ -235,6 +243,10 @@ for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
                             acc, tpr, fpr, precision, auc, pr_curve,
                             training_sec, infrence_1000_sec])
 
-results_df = pd.DataFrame(results, columns=columns)
-results_df.to_csv(folder_path / 'results.csv', index=False)
+    results_df = pd.DataFrame(results, columns=columns)
+    result_file = folder_path / 'results.csv'
+    if i > 1:
+        results_df.to_csv(result_file, index=False, header=False, mode='a')
+    else:
+        results_df.to_csv(result_file, index=False)
 

@@ -5,18 +5,21 @@ from sklearn.base import BaseEstimator
 
 
 class DNDT(BaseEstimator):
-    def __init__(self, cut_count=4, cut_size=1, lr=0.01, temprature=0.1, epochs=10):
+    def __init__(self, cut_count=4, cut_size=1, lr=0.01, temprature=0.1, epochs=10, num_class=None):
         self.cut_count = cut_count
         self.cut_size = cut_size
         self.lr = lr
         self.temprature = temprature
         self.epochs = epochs
+        self.num_class = num_class
 
     def fit(self, X, y):
         X_input = torch.from_numpy(X.astype(np.float32))
         y_input = torch.from_numpy(y)
-        num_class = len(np.unique(y_input))
-
+        if self.num_class is None:
+            num_class = len(np.unique(y_input))
+        else:
+            num_class = self.num_class
         num_cut = [self.cut_size] * self.cut_count
 
         num_leaf = np.prod(np.array(num_cut) + 1)
