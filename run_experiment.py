@@ -41,7 +41,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 # PaloBstSKlearn().get_params()
 
 def preprocess_base(X, y):
-    X = pd.get_dummies(pd.DataFrame(X)).values
+    X = pd.get_dummies(pd.DataFrame(X).infer_objects()).values
     X = SimpleImputer(strategy='mean').fit_transform(X)
     return X, y
 
@@ -81,8 +81,8 @@ space = {
 }
 model3 = (ProbabilisticRandomForest, space, preprocess_base, True)
 
-models = [baseline_model, model1, model2, model3]
-# models = [model2]
+# models = [baseline_model, model1, model2, model3]
+models = [model1]
 
 # %% md
 
@@ -111,7 +111,7 @@ def optimize_parameters(model, space, X_train, y_train, multiclass=True):
 
     # Run the algorithm
     best = fmin(fn=objective, space=space, max_evals=50, rstate=np.random.RandomState(42), algo=tpe.suggest,
-                verbose=False)
+                verbose=True)
     for param in space:
         if param not in best:
             best[param] = space[param]
@@ -213,7 +213,7 @@ columns = ['Dataset Name', 'Algorithm Name', 'Cross Validation [1-10]', 'Hyper-P
 results = []
 false_datasets = []
 total_datasets = len(os.listdir(dataset_path))
-start_dataset = 7
+start_dataset = 19
 
 for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
     if i < start_dataset:
@@ -227,8 +227,8 @@ for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
         kfold = StratifiedKFold(n_splits=10)
         for fold, (train_index, test_index) in enumerate(kfold.split(X, y), 1):
             print(
-                f'\r run on dataset {i}/{total_datasets}, Method: {algorithm_name}, {model_idx}/{model_count} fold: {fold}/{10}',
-                end='')
+                f'run on dataset {i}/{total_datasets}, Method: {algorithm_name}, {model_idx}/{model_count} fold: {fold}/{10}',
+                )
             X_train, X_test, y_train, y_test = X[train_index], X[test_index], y[train_index], y[test_index]
 
             best_params = optimize_parameters(model, space, X_train, y_train, multiclass)
@@ -244,7 +244,7 @@ for i, dataset_csv in enumerate(os.listdir(dataset_path), 1):
                             training_sec, infrence_1000_sec])
 
     results_df = pd.DataFrame(results, columns=columns)
-    result_file = folder_path / 'results.csv'
+    result_file = folder_path / 'results_T.csv'
     if i > 1:
         results_df.to_csv(result_file, index=False, header=False, mode='a')
     else:

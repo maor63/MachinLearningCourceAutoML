@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit, prange
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def grow(X, Y, 
         t_rules,
         t_vals,
@@ -104,7 +104,7 @@ def grow(X, Y,
         Y_oob[s_oob:e_oob,1] += gamma
 
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def check_GAP(Y, s, e, nu, distribution):
     y = Y[s:e,0]
     y_hat_old = Y[s:e,1] 
@@ -114,7 +114,7 @@ def check_GAP(Y, s, e, nu, distribution):
     else:
         return False
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def split(X, Y, min_samples_leaf, cache_g, cache_h, cache_n, cache_l):
 
     tol = 1e10
@@ -144,7 +144,7 @@ def split(X, Y, min_samples_leaf, cache_g, cache_h, cache_n, cache_l):
 
     return svar_best, sval_best
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def get_sval(x, grad, hess, min_samples_leaf, cache_g, cache_h, cache_n):
 
     reg_lambda = 1.0
@@ -183,7 +183,7 @@ def get_sval(x, grad, hess, min_samples_leaf, cache_g, cache_h, cache_n):
     return x_best, loss_min
 
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def reorder(X, Y, s, e, svar, sval):
     X_ = X[s:e,:]
     Y_ = Y[s:e,:]
@@ -193,7 +193,7 @@ def reorder(X, Y, s, e, svar, sval):
     Y[s:e,:] = Y_[idx,:]
     return s + np.sum(ln)
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def loss(y, y_hat, distribution):
     if distribution == "bernoulli":
         return np.mean(-2.0*(y*y_hat - np.logaddexp(0.0, y_hat)))
@@ -201,7 +201,7 @@ def loss(y, y_hat, distribution):
         return np.mean((y-y_hat)**2)
     
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=True)
 def apply_tree(X, y, t_svar, t_sval, t_vals, n_estimators, t_nodes):
     for i in prange(X.shape[0]):
         for j in prange(n_estimators):
@@ -211,7 +211,7 @@ def apply_tree(X, y, t_svar, t_sval, t_vals, n_estimators, t_nodes):
                         t_vals[(t_nodes*j):(t_nodes*(j+1))])
     return y 
 
-@njit(fastmath=False)
+@njit(fastmath=True)
 def apply_tree0(x, t_svar, t_sval, t_vals):
     nid = 0
     while t_svar[nid] > -1:
@@ -221,7 +221,7 @@ def apply_tree0(x, t_svar, t_sval, t_vals):
             nid = nid * 2 + 2
     return t_vals[nid]
 
-@njit(fastmath=False)
+@njit(fastmath=True)
 def update_fi(t_rules, t_vals, cache_t, cache_f):
 
     n = cache_t.shape[0]

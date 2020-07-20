@@ -25,6 +25,7 @@ class PaloBst(BaseEstimator):
         self.t_svar = None
         self.t_sval = None
         self.t_pred = None
+        self.warmup()
 
     def warmup(self):
         n = max(self.min_samples_split, self.min_samples_leaf)
@@ -37,7 +38,6 @@ class PaloBst(BaseEstimator):
         self.predict(X)
 
     def fit(self, X, y):
-
         n, m = X.shape
         n_nodes_tree = (2**(self.max_depth + 1) - 1)
         n_nodes_trees = n_nodes_tree * self.n_estimators
