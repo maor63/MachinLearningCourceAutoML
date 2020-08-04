@@ -34,7 +34,8 @@ def friedman_test(results_df, score, higher_is_better):
                 if algo1_index != algo2_index:
                     algos_p_val = nemenyi_p_values[algo1_index][algo2_index]
                     if algos_p_val < 0.05:
-                        if algo1_mean > algo2_mean and higher_is_better:
+                        if (algo1_mean > algo2_mean and higher_is_better) or \
+                                (algo1_mean < algo2_mean and not higher_is_better):
                             print(algo1 + ' is significantly better than ' + algo2, '(Nemenyi test with 0.05)')
                         else:
                             print(algo2 + ' is significantly better than ' + algo1, '(Nemenyi test with 0.05)')
