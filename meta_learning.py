@@ -2,9 +2,10 @@ import timeit
 
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import LeaveOneOut
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, plot_importance
 from sklearn import metrics
 
 
@@ -130,6 +131,9 @@ columns = ['Dataset Name', 'Accuracy', 'TPR_macro', 'FPR_macro', 'Precision_macr
            'Training Time (sec)', 'Predicted Model', 'Predicted Model Probability']
 
 results = []
+_total_y_test = []
+_total_y_pred = []
+_total_y_proba = []
 for train_index, test_index in loo.split(X):
     print('Train index:', train_index, 'Test index:', test_index)
     X_train, X_test, y_train, y_test = X[train_index], X[test_index], y[train_index], y[test_index]
@@ -145,6 +149,45 @@ for train_index, test_index in loo.split(X):
     results.append([datasets_names[test_index][0], acc, tpr, fpr, precision, auc, pr_curve, training_sec,
                     predicted_model, predicted_model_proba])
 
+    # total
+    if y_proba.shape == (1, len(algorithm_names)):
+        _total_y_test.append(y_test[0])
+        _total_y_pred.append(y_pred[0])
+        _total_y_proba.append(y_proba[0])
+
+# scores on all
+scores = calculate_scores(np.array(_total_y_test), np.array(_total_y_pred), np.array(_total_y_proba))
+acc, tpr, fpr, precision, auc, pr_curve = scores
+print('Accuracy', 'TPR_macro', 'FPR_macro', 'Precision_macro', 'AUC_macro', 'PR-Curve_macro', sep='\t')
+print(acc, tpr, fpr, precision, auc, pr_curve, sep='\t')
+
+# save
 xgb_results_df = pd.DataFrame(results, columns=columns)
 result_file = 'xgb_results_T.csv'
 xgb_results_df.to_csv(result_file, index=False)
+
+# train all
+print('Trainig based on all')
+model, _ = train(X, y)
+ax = plot_importance(model, title='Weight', importance_type='weight', max_num_features=10)
+plt.show()
+ax = plot_importance(model, title='Gain', importance_type='gain', max_num_features=10)
+plt.show()
+ax = plot_importance(model, title='Cover', importance_type='cover', max_num_features=10)
+plt.show()
+
+# fix tree
+booster = model.get_booster()
+model_bytearray = booster.save_raw()[4:]
+def fix(self=None):
+    return model_bytearray
+booster.save_raw = fix
+
+# shap
+import shap
+explainer = shap.TreeExplainer(booster)
+shap_values = explainer.shap_values(X)
+shap.initjs()
+for i in range(4):
+    shap.save_html('shap_' + str(i) + '.html', shap.force_plot(explainer.expected_value[i], shap_values[i], X))
+shap.summary_plot(shap_values, X)
