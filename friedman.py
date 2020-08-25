@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from scipy.stats import friedmanchisquare
+from scipy.stats import friedmanchisquare, rankdata
 from scikit_posthocs import posthoc_nemenyi
 
 
@@ -43,6 +43,21 @@ def friedman_test(results_df, score, higher_is_better):
                         print(algo1 + ' and ' + algo2 + ' are not significant')
     else:
         print('Fail to reject (same distributions)')
+
+    # print table
+    print('\nDataset-Algorithm ranks:')
+    algorithm_names_str = '\t'
+    for algorithm in algorithm_names:
+        algorithm_names_str += algorithm + '\t'
+    print(algorithm_names_str)
+    datasets = results_df['Dataset Name'].drop_duplicates().values
+    for dataset_index, dataset in enumerate(datasets):
+        dataset_values = 1 - mean_reshape.values[dataset_index]
+        dataset_ranks = rankdata(dataset_values)
+        dataset_ranks_str = dataset + '\t'
+        for dataset_rank in dataset_ranks:
+            dataset_ranks_str += str(int(dataset_rank)) + '\t'
+        print(dataset_ranks_str)
 
 
 results_df = pd.read_csv('./results_T_completed.csv')
